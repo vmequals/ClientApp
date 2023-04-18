@@ -1,9 +1,10 @@
 // src/app/services/notification.service.ts
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import * as signalR from '@microsoft/signalr';
 import { Observable, Subject } from 'rxjs';
 import { UserNotification } from './models/user-notification.model';
+import { JwtHelperService } from '@auth0/angular-jwt';
 
 @Injectable({
   providedIn: 'root',
@@ -13,11 +14,13 @@ export class NotificationService {
   private newNotification = new Subject<UserNotification>();
   private apiUrl = 'https://your-api-url/api/notification';
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private jwtHelper: JwtHelperService) {}
 
-  public startConnection(userId: string): void {
+  public startConnection(): void {
+    const token = localStorage.getItem('access_token');
+
     this.hubConnection = new signalR.HubConnectionBuilder()
-      .withUrl('/notificationHub', { accessTokenFactory: () => userId })
+      .withUrl('/notificationHub', { accessTokenFactory: () => token })
       .build();
 
     this.hubConnection
@@ -30,15 +33,37 @@ export class NotificationService {
   }
 
   public sendNotification(userIds: string[], message: string): Observable<any> {
-    return this.http.post(`${this.apiUrl}/send`, { userIds, message });
+    const token = localStorage.getItem('access_token');
+    const httpOptions = {
+      headers: new HttpHeaders({
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      }),
+    };
+    return this.http.post(`${this.apiUrl}/send`, { userIds, message }, httpOptions);
   }
 
-  public getUnreadNotifications(userId: string): Observable<UserNotification[]> {
-    return this.http.get<UserNotification[]>(`${this.apiUrl}/unread/${userId}`);
+  public getUnreadNotifications(): Observable<UserNotification[]> {
+    const token = localStorage.getItem('access_token');
+    const userId = this.jwtHelper.decodeToken(token).sub;
+    const httpOptions = {
+      headers: new HttpHeaders({
+        Authorization: `Bearer ${token}`,
+      }),
+    };
+    return this.http.get<UserNotification[]>(`${this.apiUrl}/unread/${userId}`, httpOptions);
   }
 
-  public markNotificationAsRead(userId: string, notificationId: number): Observable<any> {
-    return this.http.put(`${this.apiUrl}/markAsRead/${userId}/${notificationId}`, {});
+  public markNotificationAsRead(notificationId: number): Observable<any> {
+    const token = localStorage.getItem('access_token');
+    const userId = this.jwtHelper.decodeToken(token).sub;
+    const httpOptions = {
+      headers: new HttpHeaders({
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      }),
+    };
+    return this.http.put(`${this.apiUrl}/markAsRead/${userId}/${notificationId}`, {}, httpOptions);
   }
 
   public getNewNotification(): Observable<UserNotification> {

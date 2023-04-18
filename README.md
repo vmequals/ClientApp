@@ -1,3 +1,8 @@
+npm install @auth0/angular-jwt
+npm install @microsoft/signalr
+npm install jsonwebtoken
+
+
 # ClientApp
 
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 11.2.14.

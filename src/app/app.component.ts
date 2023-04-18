@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { NotificationService } from './notification.service';
 import { UserNotification } from './models/user-notification.model';
+import { JwtHelperService } from '@auth0/angular-jwt';
 
 @Component({
   selector: 'app-root',
@@ -12,11 +13,11 @@ export class AppComponent implements OnInit {
   userId: string;
   unreadNotifications: UserNotification[] = [];
 
-  constructor(private notificationService: NotificationService) {}
+  constructor(private notificationService: NotificationService, private jwtHelper: JwtHelperService) {}
 
   ngOnInit(): void {
-    // const token = localStorage.getItem('access_token');
-    // this.userId = this.jwtHelper.decodeToken(token).sub;
+    const token = localStorage.getItem('access_token');
+    this.userId = this.jwtHelper.decodeToken(token).sub;
     this.notificationService.startConnection(this.userId);
     this.notificationService.getNewNotification().subscribe((userNotification) => {
       this.unreadNotifications.push(userNotification);
