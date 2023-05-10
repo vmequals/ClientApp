@@ -1,78 +1,67 @@
-// src/app/services/notification.service.ts
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+// import { Injectable } from '@angular/core';
+// import { HttpClient } from '@angular/common/http';
+// import { Observable } from 'rxjs';
+//
+// @Injectable({
+//   providedIn: 'root'
+// })
+// export class NotificationService {
+//   private apiUrl = 'https://my-api.com/notifications';
+//
+//   constructor(private http: HttpClient) {}
+//
+//   getNotifications(): Observable<Notification[]> {
+//     return this.http.get<Notification[]>(this.apiUrl);
+//   }
+//
+//   markAsRead(notificationId: string): Observable<any> {
+//     return this.http.put(`${this.apiUrl}/${notificationId}/read`, {});
+//   }
+// }
+
 import { Injectable } from '@angular/core';
-import * as signalR from '@microsoft/signalr';
-import { Observable, Subject } from 'rxjs';
-import { UserNotification } from './models/user-notification.model';
-import { JwtHelperService } from '@auth0/angular-jwt';
+import { Observable, of } from 'rxjs';
+import { Notification } from './models/notification.model';
+import {NotificationStore} from './notification.store';
 
 @Injectable({
-  providedIn: 'root',
+  providedIn: 'root'
 })
 export class NotificationService {
-  private hubConnection: signalR.HubConnection;
-  private newNotification = new Subject<UserNotification>();
-  private apiUrl = 'https://your-api-url/api/notification';
+  private apiUrl = 'https://my-api.com/notifications';
 
-  constructor(private http: HttpClient, private jwtHelper: JwtHelperService) {}
+  constructor(private notificationStore: NotificationStore) {}
 
-  public startConnection(): void {
-    const token = localStorage.getItem('access_token');
-
-    this.hubConnection = new signalR.HubConnectionBuilder()
-      .withUrl('/notificationHub', { accessTokenFactory: () => token })
-      .build();
-
-    this.hubConnection
-      .start()
-      .then(() => {
-        console.log('Connection started');
-        this.registerNotificationEvents();
-      })
-      .catch((err) => console.error('Error starting connection: ' + err));
+  getNotifications(): Observable<Notification[]> {
+    const notifications: Notification[] = [
+      {
+        id: 1,
+        message: 'You have a new message',
+        timestamp: new Date('2022-05-11T12:00:00Z'),
+        read: false
+      },
+      {
+        id: 2,
+        message: 'You have a new friend request',
+        timestamp: new Date('2022-05-10T12:00:00Z'),
+        read: true
+      },
+      {
+        id: 3,
+        message: 'You have a new notification',
+        timestamp: new Date('2022-05-09T12:00:00Z'),
+        read: false
+      }
+    ];
+    return of(notifications);
   }
 
-  public sendNotification(userIds: string[], message: string): Observable<any> {
-    const token = localStorage.getItem('access_token');
-    const httpOptions = {
-      headers: new HttpHeaders({
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      }),
-    };
-    return this.http.post(`${this.apiUrl}/send`, { userIds, message }, httpOptions);
-  }
-
-  public getUnreadNotifications(): Observable<UserNotification[]> {
-    const token = localStorage.getItem('access_token');
-    const userId = this.jwtHelper.decodeToken(token).sub;
-    const httpOptions = {
-      headers: new HttpHeaders({
-        Authorization: `Bearer ${token}`,
-      }),
-    };
-    return this.http.get<UserNotification[]>(`${this.apiUrl}/unread/${userId}`, httpOptions);
-  }
-
-  public markNotificationAsRead(notificationId: number): Observable<any> {
-    const token = localStorage.getItem('access_token');
-    const userId = this.jwtHelper.decodeToken(token).sub;
-    const httpOptions = {
-      headers: new HttpHeaders({
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      }),
-    };
-    return this.http.put(`${this.apiUrl}/markAsRead/${userId}/${notificationId}`, {}, httpOptions);
-  }
-
-  public getNewNotification(): Observable<UserNotification> {
-    return this.newNotification.asObservable();
-  }
-
-  private registerNotificationEvents(): void {
-    this.hubConnection.on('ReceiveNotification', (userNotification: UserNotification) => {
-      this.newNotification.next(userNotification);
-    });
+  markAsRead(notificationId: number): void {
+    const notifications = this.notificationStore.notifications.slice();
+    const notificationIndex = notifications.findIndex(n => n.id === notificationId);
+    if (notificationIndex !== -1) {
+      notifications[notificationIndex].read = true;
+      this.notificationStore.notifications = notifications;
+    }
   }
 }
