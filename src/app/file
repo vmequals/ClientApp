@@ -1,0 +1,68 @@
+under configureservices/program.cs
+--------------------------------
+services.AddHttpClient("NotificationService", client =>
+{
+    client.BaseAddress = new Uri("https://your-notification-service-url/");
+});
+
+
+NotificationServiceClient
+-------------------------
+
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Text.Json;
+using System.Threading.Tasks;
+using YourNamespace.Models;
+
+namespace YourNamespace.Services
+{
+    public class NotificationServiceClient
+    {
+        private readonly HttpClient _httpClient;
+
+        public NotificationServiceClient(IHttpClientFactory httpClientFactory)
+        {
+            _httpClient = httpClientFactory.CreateClient("NotificationService");
+        }
+
+        public async Task<IEnumerable<Notification>> GetNotificationsForGroupAsync(string groupId)
+        {
+            var response = await _httpClient.GetAsync($"api/Notifications/GetGroupNotifications/{groupId}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                return JsonSerializer.Deserialize<IEnumerable<Notification>>(content);
+            }
+
+            return null;
+        }
+    }
+}
+
+program.cs
+--------
+services.AddScoped<NotificationServiceClient>();
+
+
+in the hub
+---------
+public class YourHub : Hub
+{
+    private readonly NotificationServiceClient _notificationServiceClient;
+
+    public YourHub(NotificationServiceClient notificationServiceClient)
+    {
+        _notificationServiceClient = notificationServiceClient;
+    }
+
+    public async Task JoinGroup(string groupName)
+    {
+        await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
+
+        var notifications = await _notificationServiceClient.GetNotificationsForGroupAsync(groupName);
+
+        // Process the notifications and send them to the frontend, if any
+    }
+}
