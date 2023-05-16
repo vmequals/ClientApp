@@ -66,3 +66,124 @@ public class YourHub : Hub
         // Process the notifications and send them to the frontend, if any
     }
 }
+
+
+
+custom JsonConverter
+-----------------------
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System;
+
+public class MedewerkerNotificatieConverter : JsonConverter
+{
+    public override bool CanConvert(Type objectType)
+    {
+        return objectType == typeof(MedewerkerNotificatie);
+    }
+
+    public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+    {
+        JObject jObject = JObject.Load(reader);
+
+        MedewerkerNotificatie medewerkerNotificatie = new MedewerkerNotificatie
+        {
+            MedewerkerNotificatieId = jObject.Value<int>("medewerkernotificatieId"),
+            MedewerkerId = jObject.Value<string>("medewerkerId"),
+            NotificatieId = jObject.Value<int>("notificatieid")
+        };
+
+        JObject notificatieObject = jObject["notificatie"] as JObject;
+        if (notificatieObject != null)
+        {
+            medewerkerNotificatie.Notificatie = new Notificatie
+            {
+                NotificatieId = notificatieObject.Value<int>("notificatieid"),
+                Bron = notificatieObject.Value<string>("bron")
+            };
+        }
+
+        return medewerkerNotificatie;
+    }
+
+    public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+    {
+        throw new NotImplementedException("This converter is for deserialization only.");
+    }
+}
+
+
+deserialize
+-------
+
+using Newtonsoft.Json;
+
+string jsonString = /* your JSON string */;
+
+var settings = new JsonSerializerSettings
+{
+    PreserveReferencesHandling = PreserveReferencesHandling.Objects,
+    Formatting = Formatting.Indented
+};
+
+List<MedewerkerNotificatie> medewerkerNotificaties = JsonConvert.DeserializeObject<List<MedewerkerNotificatie>>(jsonString, settings);
+
+
+
+
+WITH VALUES
+_________
+
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System;
+
+public class MedewerkerNotificatieConverter : JsonConverter
+{
+    public override bool CanConvert(Type objectType)
+    {
+        return objectType == typeof(MedewerkerNotificatie);
+    }
+
+    public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+    {
+        JObject jObject = JObject.Load(reader);
+
+        MedewerkerNotificatie medewerkerNotificatie = new MedewerkerNotificatie
+        {
+            MedewerkerNotificatieId = jObject.Value<int>("medewerkernotificatieId"),
+            MedewerkerId = jObject.Value<string>("medewerkerId"),
+            NotificatieId = jObject.Value<int>("notificatieid")
+        };
+
+        JObject notificatieObject = jObject["notificatie"] as JObject;
+        if (notificatieObject != null)
+        {
+            medewerkerNotificatie.Notificatie = new Notificatie
+            {
+                NotificatieId = notificatieObject.Value<int>("notificatieid"),
+                Bron = notificatieObject.Value<string>("bron")
+            };
+        }
+
+        return medewerkerNotificatie;
+    }
+
+    public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+    {
+        throw new NotImplementedException("This converter is for deserialization only.");
+    }
+}
+
+
+AND THEN
+____
+string jsonString = /* your JSON string */;
+
+var settings = new JsonSerializerSettings
+{
+    Converters = new List<JsonConverter> { new MedewerkerNotificatieConverter() },
+    Formatting = Formatting.Indented
+};
+
+List<MedewerkerNotificatie> medewerkerNotificaties = JsonConvert.DeserializeObject<List<MedewerkerNotificatie>>(jsonString, settings);
