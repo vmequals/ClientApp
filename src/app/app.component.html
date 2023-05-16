@@ -2,6 +2,8 @@
   <h1>Welcome to {{ title }}!</h1>
 </div>
 
+<app-header></app-header>
+
 <button (click)="sendNotification()">Send Test Notification</button>
 
 <div *ngFor="let userNotification of unreadNotifications">

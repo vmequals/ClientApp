@@ -1,14 +1,20 @@
 
+<!--<div class="notification-container">-->
+<!--  <div class="notification">-->
+<!--    <i class="fa fa-bell"></i>-->
+<!--    <span class="count">{{ unreadCount }}</span>-->
+<!--    <div class="dropdown">-->
+<!--      <div *ngFor="let notification of notifications">-->
+<!--        <div [class.read]="notification.read" (click)="markAsRead(notification.id)">-->
+<!--          {{ notification.message }}-->
+<!--        </div>-->
+<!--      </div>-->
+<!--    </div>-->
+<!--  </div>-->
+<!--</div>-->
+
 <div class="notification-container">
-  <div class="notification">
-    <i class="fa fa-bell"></i>
-    <span class="count">{{ unreadCount }}</span>
-    <div class="dropdown">
-      <div *ngFor="let notification of notifications">
-        <div [class.read]="notification.read" (click)="markAsRead(notification.id)">
-          {{ notification.message }}
-        </div>
-      </div>
-    </div>
+  <div *ngFor="let notification of notifications" class="notification-item" [ngClass]="{'unread': !notification.read}" (click)="readNotification(notification)">
+    {{ notification.text }}
   </div>
 </div>
