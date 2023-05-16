@@ -1,0 +1,6 @@
+<div class="header">
+  <div>Logo</div>
+<!--  <mat-icon class="icon" (click)="toggleNotification()" [ngClass]="{'active': showNotification}">notifications</mat-icon>-->
+  <i class="icon" (click)="toggleNotification()" [ngClass]="{'fa': true, 'fa-bell': !showNotification, 'fa-bell-slash': showNotification}"></i>
+</div>
+<app-notification *ngIf="showNotification"></app-notification>
